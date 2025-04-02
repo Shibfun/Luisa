@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitmap 风格 - 50x50 网格</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        h1 {
+            font-size: 24px;
+            color: #1a73e8;
+            margin-bottom: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        button {
+            padding: 8px 16px;
+            font-size: 16px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #1557b0;
+        }
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+        td {
+            width: 10px;
+            height: 10px;
+            border: 0.5px solid #000000;
+        }
+        #status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bitmap 风格 - 50x50 网格</h1>
+        <button onclick="generateRandomBitmap()">随机生成</button>
+        <table id="bitmapTable"></table>
+        <div id="status">点击“随机生成”以创建 Bitmap 图！</div>
+    </div>
+
+    <script>
+        const fillColor = "#F5A623"; // 橙色
+        const backgroundColor = "#000000"; // 黑色背景
+        const threshold = 250; // 阈值，决定是否填充
+
+        // 随机生成 2500 个数字并绘制 Bitmap 图
+        function generateRandomBitmap() {
+            const status = document.getElementById("status");
+            status.textContent = "正在生成随机 Bitmap 图...";
+
+            // 生成 2500 个随机数字 (0-500)
+            const randomCounts = Array.from({ length: 2500 }, () => Math.floor(Math.random() * 501));
+
+            // 获取表格元素
+            const table = document.getElementById("bitmapTable");
+            table.innerHTML = ""; // 清空表格
+
+            // 创建 50x50 网格
+            for (let i = 0; i < 50; i++) {
+                const row = document.createElement("tr");
+                for (let j = 0; j < 50; j++) {
+                    const cell = document.createElement("td");
+                    const index = i * 50 + j;
+                    const value = randomCounts[index];
+                    // 二值化：值大于等于阈值时填充橙色，否则不填充
+                    cell.style.backgroundColor = value >= threshold ? fillColor : backgroundColor;
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+
+            status.textContent = "随机 Bitmap 图已生成！";
+        }
+
+        // 页面加载时自动生成一次
+        window.onload = generateRandomBitmap;
+    </script>
+</body>
+</html>
