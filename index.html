@@ -34,6 +34,14 @@
             text-align: center;
             margin-bottom: 20px;
         }
+        input[type="number"] {
+            padding: 5px;
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #ff8c00;
+            border-radius: 5px;
+            width: 100px;
+        }
         button {
             padding: 5px 15px;
             background: linear-gradient(45deg, #ff8c00, #e07b00);
@@ -126,16 +134,6 @@
             border-radius: 10px;
             cursor: pointer;
         }
-        textarea {
-            width: 100%;
-            height: 100px;
-            margin-bottom: 10px;
-            background: #1a1a1a;
-            color: #fff;
-            border: 1px solid #ff8c00;
-            border-radius: 5px;
-            padding: 5px;
-        }
         @media (max-width: 768px) {
             h1 { font-size: 32px; }
             .input-container { flex-wrap: wrap; gap: 8px; }
@@ -154,6 +152,7 @@
         <button id="connectWalletBtn" class="action-btn">Connect Wallet</button>
     </div>
     <div class="input-container">
+        <input type="number" id="batchId" min="0" placeholder="Enter Batch ID">
         <button onclick="loadBlocks()">Query</button>
     </div>
     <div id="blockRange"></div>
@@ -162,7 +161,6 @@
     <div class="action-buttons">
         <button id="storeBtn" class="action-btn" onclick="startStoreCountdown()" disabled>Store Data</button>
         <button id="balanceBtn" class="action-btn" onclick="checkBalance()" disabled>Check Balance</button>
-        <button id="whitelistBtn" class="action-btn" onclick="showWhitelistModal()" disabled>Manage Whitelist</button>
     </div>
     <div id="modal" class="modal">
         <div class="modal-content">
@@ -174,40 +172,38 @@
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
     <script>
         let blockData = [];
+        let batchId = 0;
         let startBlock = 0;
-        let endBlock = 2499;
+        let endBlock = 0;
         let web3, accounts, contract;
-        const CONTRACT_ADDRESS = "0x66d0F9517cD1F7D5ee5d09C6f007D549c2860BC7";
+        const CONTRACT_ADDRESS = "0x0238435a362ECdD8eC76ba22cDE54777963F9214";
         const CONTRACT_ABI = [
             {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},
             {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"startBlock","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"endBlock","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"timestamp","type":"uint256"}],"name":"BlockBatchStored","type":"event"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},
             {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"bool","name":"isWhitelisted","type":"bool"}],"name":"WhitelistUpdated","type":"event"},
-            {"inputs":[{"internalType":"address[]","name":"users","type":"address[]"}],"name":"addToWhitelistBatch","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
- magnify({"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"blockBatchRecords","outputs":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"uint256","name":"startBlock","type":"uint256"},{"internalType":"uint256","name":"endBlock","type":"uint256"},{"internalType":"bytes","name":"txCounts","type":"bytes"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"blockBatchRecords","outputs":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"uint256","name":"startBlock","type":"uint256"},{"internalType":"uint256","name":"endBlock","type":"uint256"},{"internalType":"bytes","name":"txCounts","type":"bytes"},{"internalType":"bool","name":"isMinted","type":"bool"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[],"name":"getBatchCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"getBlockRangeById","outputs":[{"internalType":"uint256","name":"startBlock","type":"uint256"},{"internalType":"uint256","name":"endBlock","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"getNextExpectedStartBlock","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"getBlockRangeById","outputs":[{"internalType":"uint256","name":"startBlock","type":"uint256"},{"internalType":"uint256","name":"endBlock","type":"uint256"},{"internalType":"bool","name":"isMinted","type":"bool"}],"stateMutability":"view","type":"function"},
             {"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"getTxCountsById","outputs":[{"internalType":"uint256[2500]","name":"txCounts","type":"uint256[2500]"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],"name":"isIdMinted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"mintedIds","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address[]","name":"users","type":"address[]"}],"name":"removeFromWhitelistBatch","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"uint256","name":"_startBlock","type":"uint256"},{"internalType":"uint256[2500]","name":"_txCounts","type":"uint256[2500]"}],"name":"storeBlockBatch","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"},{"internalType":"uint256[2500]","name":"_txCounts","type":"uint256[2500]"}],"name":"storeBlockBatch","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
             {"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"whitelist","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}
+            {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"_id","type":"uint256"},{"internalType":"uint256[2500]","name":"_txCounts","type":"uint256[2500]"}],"name":"updateTxCounts","outputs":[],"stateMutability":"nonpayable","type":"function"}
         ];
         const shibariumMainnet = {
             chainId: 109,
@@ -261,7 +257,7 @@
             contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
             showModal('Connected to Shibarium successfully!');
             updateWalletAddress();
-            checkOwner();
+            enableButtons();
             connectButton.classList.remove('loading');
         }
 
@@ -274,20 +270,9 @@
             }
         }
 
-        async function checkOwner() {
-            const owner = await contract.methods.owner().call();
-            const isOwner = accounts && accounts[0].toLowerCase() === owner.toLowerCase();
+        function enableButtons() {
             document.getElementById('storeBtn').disabled = !accounts;
             document.getElementById('balanceBtn').disabled = !accounts;
-            document.getElementById('whitelistBtn').disabled = !isOwner;
-        }
-
-        async function findNextAvailableGroup() {
-            if (!contract) return null;
-            const nextStartBlock = await contract.methods.getNextExpectedStartBlock().call();
-            startBlock = parseInt(nextStartBlock);
-            endBlock = startBlock + 2499;
-            return { startBlock, endBlock };
         }
 
         async function fetchBlockData(blockNumber) {
@@ -313,22 +298,37 @@
             const errorDiv = document.getElementById('error');
             const blockRangeDiv = document.getElementById('blockRange');
             const storeButton = document.getElementById('storeBtn');
+            const batchIdInput = document.getElementById('batchId').value;
+
+            if (!batchIdInput || batchIdInput < 0) {
+                showModal('Please enter a valid Batch ID (0 or greater).');
+                return;
+            }
+
+            batchId = parseInt(batchIdInput);
+            startBlock = batchId * 2500;
+            endBlock = startBlock + 2499;
 
             errorDiv.style.display = 'none';
             blockRangeDiv.style.display = 'none';
             loadingDiv.style.display = 'block';
             storeButton.disabled = true;
 
-            const range = await findNextAvailableGroup();
-            if (!range) {
-                errorDiv.textContent = "Unable to determine next block range. Please connect wallet.";
+            if (!contract) {
+                errorDiv.textContent = "Please connect wallet first.";
                 errorDiv.style.display = 'block';
                 loadingDiv.style.display = 'none';
                 return;
             }
 
-            startBlock = range.startBlock;
-            endBlock = range.endBlock;
+            const isMinted = await contract.methods.isIdMinted(batchId).call();
+            if (isMinted) {
+                errorDiv.textContent = `Batch ID ${batchId} has already been minted.`;
+                errorDiv.style.display = 'block';
+                loadingDiv.style.display = 'none';
+                return;
+            }
+
             blockRangeDiv.textContent = `Block range: ${startBlock} to ${endBlock}`;
             blockRangeDiv.style.display = 'block';
 
@@ -381,11 +381,12 @@
                     throw new Error("Please query exactly 2500 blocks of data!");
                 }
                 showModal('Storing data on Shibarium... Please confirm in your wallet');
-                await contract.methods.storeBlockBatch(startBlock, blockData).send({ from: accounts[0] });
+                await contract.methods.storeBlockBatch(batchId, blockData).send({ from: accounts[0] });
                 showModal('Data stored successfully! 2500 PAW tokens minted.');
                 storeButton.classList.remove('loading');
                 storeButton.disabled = false;
-                loadBlocks();
+                document.getElementById('batchId').value = '';
+                blockData = [];
             } catch (error) {
                 showModal('Failed to store data: ' + error.message);
                 storeButton.classList.remove('loading');
@@ -403,51 +404,6 @@
             showModal(`Your PAW balance: ${pawBalance} PAW`);
         }
 
-        function showWhitelistModal() {
-            if (!contract || !accounts) {
-                showModal('Please connect your wallet first!');
-                return;
-            }
-            showModal(`
-                <p>Manage Whitelist:</p>
-                <textarea id="whitelistInput" placeholder="Enter one address per line"></textarea>
-                <button onclick="addToWhitelist()">Add to Whitelist</button>
-                <button onclick="removeFromWhitelist()">Remove from Whitelist</button>
-            `);
-        }
-
-        async function addToWhitelist() {
-            const input = document.getElementById('whitelistInput').value;
-            const addresses = input.split('\n').map(addr => addr.trim()).filter(addr => addr);
-            if (!addresses.length) {
-                showModal('Please enter at least one address!');
-                return;
-            }
-            try {
-                showModal('Adding to whitelist... Please confirm in your wallet');
-                await contract.methods.addToWhitelistBatch(addresses).send({ from: accounts[0] });
-                showModal('Addresses added to whitelist successfully!');
-            } catch (error) {
-                showModal('Failed to add to whitelist: ' + error.message);
-            }
-        }
-
-        async function removeFromWhitelist() {
-            const input = document.getElementById('whitelistInput').value;
-            const addresses = input.split('\n').map(addr => addr.trim()).filter(addr => addr);
-            if (!addresses.length) {
-                showModal('Please enter at least one address!');
-                return;
-            }
-            try {
-                showModal('Removing from whitelist... Please confirm in your wallet');
-                await contract.methods.removeFromWhitelistBatch(addresses).send({ from: accounts[0] });
-                showModal('Addresses removed from whitelist successfully!');
-            } catch (error) {
-                showModal('Failed to remove from whitelist: ' + error.message);
-            }
-        }
-
         window.onload = () => {
             if (!window.location.protocol.startsWith('http')) {
                 showModal('Please run this page via a local server (e.g., "npx serve") to connect MetaMask.');
@@ -463,7 +419,7 @@
                 contract = null;
                 accounts = null;
                 updateWalletAddress();
-                checkOwner();
+                enableButtons();
             } else {
                 connectWallet();
             }
@@ -478,7 +434,7 @@
                 contract = null;
                 accounts = null;
                 updateWalletAddress();
-                checkOwner();
+                enableButtons();
             }
         });
 
