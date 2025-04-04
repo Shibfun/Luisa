@@ -294,13 +294,6 @@
                 return;
             }
 
-            if (currentBlockHeight < 2499) {
-                errorDiv.textContent = `Current block height (${currentBlockHeight}) is less than 2500. Minting not possible yet.`;
-                errorDiv.style.display = 'block';
-                loadingDiv.style.display = 'none';
-                return;
-            }
-
             if (currentBlockHeight < endBlock) {
                 const maxBatchId = Math.floor(currentBlockHeight / 2500);
                 errorDiv.textContent = `Batch ID ${batchId} (blocks ${startBlock}-${endBlock}) exceeds current block height (${currentBlockHeight}). Max Batch ID: ${maxBatchId}`;
@@ -316,9 +309,6 @@
                 loadingDiv.style.display = 'none';
                 return;
             }
-
-            blockRangeDiv.textContent = `Block range: ${startBlock} to ${endBlock}`;
-            blockRangeDiv.style.display = 'block';
 
             blockData = [];
             const batchSize = 500;
@@ -337,6 +327,7 @@
 
             loadingDiv.style.display = 'none';
             blockRangeDiv.textContent = `Block range: ${startBlock} to ${endBlock}, Data fetched successfully`;
+            blockRangeDiv.style.display = 'block';
             storeButton.disabled = false;
         }
 
@@ -371,6 +362,7 @@
                 storeButton.classList.remove('loading');
                 storeButton.disabled = false;
                 document.getElementById('batchId').value = '';
+                document.getElementById('blockRange').style.display = 'none';
                 blockData = [];
             } catch (error) {
                 showModal('Failed to store data: ' + error.message);
