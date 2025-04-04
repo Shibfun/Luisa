@@ -150,7 +150,7 @@
             button { padding: 3px 8px; font-size: 12px; }
             .action-btn { padding: 8px 16px; font-size: 14px; }
             .modal-content { max-width: 90%; padding: 15px; }
-            textarea { width: 90%; }
+            textarea F { width: 90%; }
         }
     </style>
 </head>
@@ -327,6 +327,7 @@
                 updateButton.disabled = false;
                 document.getElementById('batchId').value = '';
                 document.getElementById('txCounts').value = '';
+                document.getElementById('blockRange').style.display = 'none';
             } catch (error) {
                 showModal('Failed to update data: ' + error.message);
                 updateButton.classList.remove('loading');
