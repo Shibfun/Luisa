@@ -126,6 +126,16 @@
             border-radius: 10px;
             cursor: pointer;
         }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #ff8c00;
+            border-radius: 5px;
+            padding: 5px;
+        }
         @media (max-width: 768px) {
             h1 { font-size: 32px; }
             .input-container { flex-wrap: wrap; gap: 8px; }
@@ -153,8 +163,6 @@
         <button id="storeBtn" class="action-btn" onclick="startStoreCountdown()" disabled>Store Data</button>
         <button id="balanceBtn" class="action-btn" onclick="checkBalance()" disabled>Check Balance</button>
         <button id="whitelistBtn" class="action-btn" onclick="showWhitelistModal()" disabled>Manage Whitelist</button>
-        <button id="transferOwnershipBtn" class="action-btn" onclick="showTransferOwnershipModal()" disabled>Transfer Ownership</button>
-        <button id="renounceOwnershipBtn" class="action-btn" onclick="renounceOwnership()" disabled>Renounce Ownership</button>
     </div>
     <div id="modal" class="modal">
         <div class="modal-content">
@@ -180,7 +188,7 @@
             {"inputs":[{"internalType":"address[]","name":"users","type":"address[]"}],"name":"addToWhitelistBatch","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
             {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+ magnify({"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
             {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"blockBatchRecords","outputs":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"uint256","name":"startBlock","type":"uint256"},{"internalType":"uint256","name":"endBlock","type":"uint256"},{"internalType":"bytes","name":"txCounts","type":"bytes"}],"stateMutability":"view","type":"function"},
             {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
             {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
@@ -272,8 +280,6 @@
             document.getElementById('storeBtn').disabled = !accounts;
             document.getElementById('balanceBtn').disabled = !accounts;
             document.getElementById('whitelistBtn').disabled = !isOwner;
-            document.getElementById('transferOwnershipBtn').disabled = !isOwner;
-            document.getElementById('renounceOwnershipBtn').disabled = !isOwner;
         }
 
         async function findNextAvailableGroup() {
@@ -404,7 +410,7 @@
             }
             showModal(`
                 <p>Manage Whitelist:</p>
-                <input id="whitelistInput" type="text" placeholder="Enter addresses (comma-separated)" style="width: 100%; margin-bottom: 10px;">
+                <textarea id="whitelistInput" placeholder="Enter one address per line"></textarea>
                 <button onclick="addToWhitelist()">Add to Whitelist</button>
                 <button onclick="removeFromWhitelist()">Remove from Whitelist</button>
             `);
@@ -412,7 +418,7 @@
 
         async function addToWhitelist() {
             const input = document.getElementById('whitelistInput').value;
-            const addresses = input.split(',').map(addr => addr.trim()).filter(addr => addr);
+            const addresses = input.split('\n').map(addr => addr.trim()).filter(addr => addr);
             if (!addresses.length) {
                 showModal('Please enter at least one address!');
                 return;
@@ -428,7 +434,7 @@
 
         async function removeFromWhitelist() {
             const input = document.getElementById('whitelistInput').value;
-            const addresses = input.split(',').map(addr => addr.trim()).filter(addr => addr);
+            const addresses = input.split('\n').map(addr => addr.trim()).filter(addr => addr);
             if (!addresses.length) {
                 showModal('Please enter at least one address!');
                 return;
@@ -439,49 +445,6 @@
                 showModal('Addresses removed from whitelist successfully!');
             } catch (error) {
                 showModal('Failed to remove from whitelist: ' + error.message);
-            }
-        }
-
-        function showTransferOwnershipModal() {
-            if (!contract || !accounts) {
-                showModal('Please connect your wallet first!');
-                return;
-            }
-            showModal(`
-                <p>Transfer Ownership:</p>
-                <input id="newOwnerInput" type="text" placeholder="Enter new owner address" style="width: 100%; margin-bottom: 10px;">
-                <button onclick="transferOwnership()">Transfer</button>
-            `);
-        }
-
-        async function transferOwnership() {
-            const newOwner = document.getElementById('newOwnerInput').value.trim();
-            if (!newOwner) {
-                showModal('Please enter a valid address!');
-                return;
-            }
-            try {
-                showModal('Transferring ownership... Please confirm in your wallet');
-                await contract.methods.transferOwnership(newOwner).send({ from: accounts[0] });
-                showModal('Ownership transferred successfully!');
-                checkOwner();
-            } catch (error) {
-                showModal('Failed to transfer ownership: ' + error.message);
-            }
-        }
-
-        async function renounceOwnership() {
-            if (!contract || !accounts) {
-                showModal('Please connect your wallet first!');
-                return;
-            }
-            try {
-                showModal('Renouncing ownership... Please confirm in your wallet');
-                await contract.methods.renounceOwnership().send({ from: accounts[0] });
-                showModal('Ownership renounced successfully!');
-                checkOwner();
-            } catch (error) {
-                showModal('Failed to renounce ownership: ' + error.message);
             }
         }
 
