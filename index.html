@@ -21,12 +21,13 @@
             text-align: center; 
             margin-bottom: 20px; 
         }
-        h1 { 
+        h1, h2 { 
             font-size: 48px; 
             color: #ff8c00; 
             text-shadow: 0 0 10px rgba(255, 140, 0, 0.5); 
         }
-        .input-box {
+        h2 { font-size: 32px; }
+        .input-box, textarea {
             margin: 10px 0;
             width: 100%;
             max-width: 400px;
@@ -37,7 +38,7 @@
             color: #fff;
             font-size: 14px;
         }
-        .controls {
+        .controls, .signer-section {
             margin: 20px 0;
             display: flex;
             flex-direction: column;
@@ -85,27 +86,29 @@
             opacity: 0.7;
             pointer-events: none;
         }
-        .info {
+        .info, .history {
             margin-top: 30px;
             width: 100%;
             max-width: 800px;
             text-align: center;
         }
-        .info h2 {
-            font-size: 32px;
-            color: #ff8c00;
-        }
-        #info {
+        #info, #historyList {
             font-size: 14px;
             color: #fff;
             word-wrap: break-word;
         }
+        #historyList div {
+            margin: 10px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
         @media (max-width: 768px) {
             h1 { font-size: 32px; }
-            .input-box { max-width: 300px; }
+            h2 { font-size: 24px; }
+            .input-box, textarea { max-width: 300px; }
             .action-btn { padding: 8px 16px; font-size: 14px; }
-            .info h2 { font-size: 24px; }
-            #info { font-size: 12px; }
+            #info, #historyList { font-size: 12px; }
         }
     </style>
 </head>
@@ -138,10 +141,37 @@
         <button id="connectBtn" class="action-btn" onclick="connectWallet()">Connect Wallet</button>
         <button id="crossChainBtn" class="action-btn" onclick="crossChain()" disabled>Cross Chain</button>
         <button id="claimBtn" class="action-btn" onclick="claimTokens()" disabled>Claim Tokens</button>
+        <button id="historyBtn" class="action-btn" onclick="viewHistory()" disabled>View History</button>
+    </div>
+    <div class="signer-section">
+        <h2>Signer Tool</h2>
+        <div class="control-group">
+            <label>Signer Private Key</label>
+            <input type="text" id="signerPrivateKey" class="input-box" placeholder="Enter signer private key (with 0x)">
+        </div>
+        <div class="control-group">
+            <label>User Address</label>
+            <input type="text" id="userAddress" class="input-box" placeholder="Enter user address (with 0x)">
+        </div>
+        <div class="control-group">
+            <label>Amount (wei)</label>
+            <input type="text" id="signerAmount" class="input-box" placeholder="Enter amount in wei">
+        </div>
+        <div class="control-group">
+            <label>Transaction ID (txId)</label>
+            <input type="text" id="signerTxId" class="input-box" placeholder="Enter txId (with 0x)">
+        </div>
+        <div class="action-buttons">
+            <button id="signBtn" class="action-btn" onclick="generateSignature()">Generate Signature</button>
+        </div>
     </div>
     <div class="info">
         <h2>Bridge Status</h2>
         <div id="info">Please connect your wallet to start.</div>
+    </div>
+    <div class="history">
+        <h2>Cross-Chain History</h2>
+        <div id="historyList">No history yet.</div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
@@ -150,10 +180,11 @@
         let web3, account;
         const SHIBARIUM_RPC = "https://www.shibrpc.com";
         const BNB_RPC = "https://bsc-dataseed.binance.org/";
-        const SHIBARIUM_CHAIN_ID = "0x6d"; // 109
-        const BNB_CHAIN_ID = "0x38"; // 56
+        const SHIBARIUM_CHAIN_ID = "0x6d";
+        const BNB_CHAIN_ID = "0x38";
         const SHIBARIUM_CONTRACT = "0x1216125b500FFF42e33254822B5Bf18C78fc04Ba";
         const BNB_CONTRACT = "0x19906e6e290F4DCEbA2DD9e4BE99024002343A61";
+        let history = [];
 
         const CONTRACT_ABI = [
             {"inputs":[{"internalType":"address","name":"_luisaToken","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
@@ -174,19 +205,12 @@
                 document.getElementById("info").innerHTML = "Please install MetaMask!";
                 return;
             }
-
             try {
                 if (network === "shibarium") {
-                    await provider.request({
-                        method: "wallet_switchEthereumChain",
-                        params: [{ chainId: SHIBARIUM_CHAIN_ID }]
-                    });
+                    await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: SHIBARIUM_CHAIN_ID }] });
                     web3 = new Web3(SHIBARIUM_RPC);
                 } else {
-                    await provider.request({
-                        method: "wallet_switchEthereumChain",
-                        params: [{ chainId: BNB_CHAIN_ID }]
-                    });
+                    await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: BNB_CHAIN_ID }] });
                     web3 = new Web3(BNB_RPC);
                 }
                 document.getElementById("info").innerHTML = `Switched to ${network === "shibarium" ? "Shibarium" : "BNB Chain"}. Please connect wallet.`;
@@ -215,7 +239,6 @@
                 document.getElementById("info").innerHTML = "Please install MetaMask!";
                 return;
             }
-
             try {
                 const accounts = await provider.request({ method: "eth_requestAccounts" });
                 account = accounts[0];
@@ -228,6 +251,7 @@
                 document.getElementById("info").innerHTML = `Connected: ${account}`;
                 document.getElementById("crossChainBtn").disabled = false;
                 document.getElementById("claimBtn").disabled = false;
+                document.getElementById("historyBtn").disabled = false;
                 document.getElementById("txIdGroup").style.display = "block";
                 document.getElementById("signaturesGroup").style.display = "block";
             } catch (error) {
@@ -260,16 +284,18 @@
                 const contract = new web3.eth.Contract(CONTRACT_ABI, contractAddress);
                 const amountWei = web3.utils.toWei(amount, "ether");
 
+                let tx;
                 if (network === "shibarium") {
                     const tokenAddress = await contract.methods.luisaToken().call();
                     const tokenContract = new web3.eth.Contract(CONTRACT_ABI, tokenAddress);
                     await tokenContract.methods.approve(SHIBARIUM_CONTRACT, amountWei).send({ from: account });
-                    const tx = await contract.methods.crossChainToBnb(amountWei).send({ from: account });
-                    document.getElementById("info").innerHTML = `Cross-chain to BNB Chain successful!<br>txId: ${tx.transactionHash}<br>Copy this txId and get signatures from multisigners.`;
+                    tx = await contract.methods.crossChainToBnb(amountWei).send({ from: account });
                 } else {
-                    const tx = await contract.methods.crossChainToShibarium(amountWei).send({ from: account });
-                    document.getElementById("info").innerHTML = `Cross-chain to Shibarium successful!<br>txId: ${tx.transactionHash}<br>Copy this txId and get signatures from multisigners.`;
+                    tx = await contract.methods.crossChainToShibarium(amountWei).send({ from: account });
                 }
+                history.push({ network, amount, txId: tx.transactionHash, timestamp: new Date().toLocaleString() });
+                document.getElementById("info").innerHTML = `Cross-chain to ${network === "shibarium" ? "BNB Chain" : "Shibarium"} successful!<br>txId: ${tx.transactionHash}<br>Share this txId with signers.`;
+                viewHistory();
             } catch (error) {
                 document.getElementById("info").innerHTML = "Cross-chain failed: " + error.message;
             } finally {
@@ -309,11 +335,12 @@
                 const r = sigs.r;
                 const s = sigs.s;
 
+                let tx;
                 if (network === "shibarium") {
-                    const tx = await contract.methods.unlockFromBnb(txId, amountWei, v, r, s).send({ from: account });
+                    tx = await contract.methods.unlockFromBnb(txId, amountWei, v, r, s).send({ from: account });
                     document.getElementById("info").innerHTML = `Tokens claimed on Shibarium!<br>Transaction Hash: <a href="https://www.shibariumscan.io/tx/${tx.transactionHash}" target="_blank">${tx.transactionHash}</a>`;
                 } else {
-                    const tx = await contract.methods.mintCrossChain(txId, amountWei, v, r, s).send({ from: account });
+                    tx = await contract.methods.mintCrossChain(txId, amountWei, v, r, s).send({ from: account });
                     document.getElementById("info").innerHTML = `Tokens claimed on BNB Chain!<br>Transaction Hash: <a href="https://bscscan.com/tx/${tx.transactionHash}" target="_blank">${tx.transactionHash}</a>`;
                 }
             } catch (error) {
@@ -321,6 +348,56 @@
             } finally {
                 claimBtn.classList.remove("loading");
                 claimBtn.disabled = false;
+            }
+        }
+
+        function viewHistory() {
+            const historyList = document.getElementById("historyList");
+            if (!account) {
+                historyList.innerHTML = "Please connect wallet to view history.";
+                return;
+            }
+            if (history.length === 0) {
+                historyList.innerHTML = "No cross-chain history yet.";
+                return;
+            }
+            historyList.innerHTML = history.map(h => 
+                `Network: ${h.network}<br>Amount: ${h.amount} LUISA<br>txId: ${h.txId}<br>Time: ${h.timestamp}`
+            ).join("<hr>");
+        }
+
+        function generateSignature() {
+            const privateKey = document.getElementById("signerPrivateKey").value;
+            const userAddress = document.getElementById("userAddress").value;
+            const amount = document.getElementById("signerAmount").value;
+            const txId = document.getElementById("signerTxId").value;
+            const signBtn = document.getElementById("signBtn");
+            signBtn.classList.add("loading");
+            signBtn.disabled = true;
+
+            if (!privateKey || !userAddress || !amount || !txId) {
+                document.getElementById("info").innerHTML = "Please fill all signer fields!";
+                signBtn.classList.remove("loading");
+                signBtn.disabled = false;
+                return;
+            }
+
+            try {
+                const signer = web3.eth.accounts.privateKeyToAccount(privateKey);
+                const messageHash = web3.utils.keccak256(
+                    web3.utils.encodePacked(userAddress, amount, txId)
+                );
+                const prefixedHash = web3.utils.keccak256(
+                    web3.utils.encodePacked("\x19Ethereum Signed Message:\n32", messageHash)
+                );
+                const signature = web3.eth.accounts.sign(prefixedHash, privateKey);
+                const { v, r, s } = signature;
+                document.getElementById("info").innerHTML = `Signature Generated:<br>v: ${v}<br>r: ${r}<br>s: ${s}<br>Share this with the user.`;
+            } catch (error) {
+                document.getElementById("info").innerHTML = "Signature generation failed: " + error.message;
+            } finally {
+                signBtn.classList.remove("loading");
+                signBtn.disabled = false;
             }
         }
 
