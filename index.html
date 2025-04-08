@@ -1,1 +1,306 @@
-text
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WoofSwap & Check-In Bot Whitepaper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 {
+            color: #4CAF50;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .lang-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+        }
+        .lang-toggle button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .lang-toggle button:hover {
+            background-color: #45a049;
+        }
+        .en, .cn {
+            display: none;
+        }
+        .en.active, .cn.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="lang-toggle">
+        <button onclick="switchLang('en')">English</button>
+        <button onclick="switchLang('cn')">中文</button>
+    </div>
+
+    <div class="en active">
+        <h1>WoofSwap & Check-In Bot Whitepaper</h1>
+        <p>Welcome to the WoofSwap & Check-In Bot, a Telegram bot that combines cryptocurrency trading on the Shibarium blockchain with a fun HAM mining game. This whitepaper explains how to use the bot and its key features.</p>
+
+        <h2>1. Overview</h2>
+        <p>This bot offers two main features: <strong>WoofSwap</strong> for trading tokens and <strong>Check-In</strong> for earning HAM points through social activities. Both run independently and are easy to use via Telegram commands.</p>
+
+        <h2>2. WoofSwap Features</h2>
+        <p>WoofSwap lets you trade tokens on Shibarium using BONE as the base currency.</p>
+
+        <h3>2.1 Commands</h3>
+        <ul>
+            <li><strong>/buy &lt;amount&gt; BONE of &lt;token&gt;</strong> or <strong>Buy &lt;amount&gt; BONE of &lt;token&gt;</strong>
+                <ul>
+                    <li>Buy tokens with BONE (e.g., /buy 10 BONE of WOOF).</li>
+                    <li>Requires enough BONE (plus a 0.01 BONE fee). Requests are queued.</li>
+                </ul>
+            </li>
+            <li><strong>/sell &lt;amount&gt; &lt;token&gt;</strong> or <strong>Sell &lt;amount&gt; &lt;token&gt;</strong>
+                <ul>
+                    <li>Sell tokens for BONE (e.g., /sell 100 WOOF).</li>
+                    <li>Requires enough token balance. Requests are queued.</li>
+                </ul>
+            </li>
+            <li><strong>/generatewallet</strong>
+                <ul>
+                    <li>Create a Shibarium wallet (private chat only).</li>
+                    <li>Returns address and private key. Keep it safe!</li>
+                </ul>
+            </li>
+            <li><strong>/mywallet</strong>
+                <ul>
+                    <li>View your wallet details (private chat only).</li>
+                </ul>
+            </li>
+            <li><strong>/balance</strong>
+                <ul>
+                    <li>Check your wallet balances (private chat only).</li>
+                </ul>
+            </li>
+            <li><strong>@username Tip &lt;amount&gt; &lt;token&gt;</strong>
+                <ul>
+                    <li>Send tokens or BONE to another user (e.g., @user123 Tip 10 BONE).</li>
+                    <li>Both users need usernames and wallets.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>2.2 Supported Tokens</h3>
+        <p>Use these tokens (in uppercase): WOOF, DAMN, PIKA, FEED, WOW, SHIPA, LUISA, CHIKA, SHIBS, NONE, SHIB, TREAT, LEASH, DUDU, MWRX, SRS, DogeFamily, NEKO, KNINE, CANNED.</p>
+
+        <h3>2.3 Rules</h3>
+        <ul>
+            <li>You must have a Telegram username to use WoofSwap.</li>
+            <li>Trades are queued (max 100 queues, 50 requests per queue).</li>
+            <li>Transactions are processed every 5 seconds if queued.</li>
+        </ul>
+
+        <h2>3. Check-In Features</h2>
+        <p>Check-In lets you earn HAM points through daily check-ins and social interactions.</p>
+
+        <h3>3.1 Commands</h3>
+        <ul>
+            <li><strong>/mint</strong> or <strong>mint</strong>
+                <ul>
+                    <li>Check in every 20 hours in a group to earn 10 HAM.</li>
+                    <li>Your inviter earns 1 HAM per check-in.</li>
+                </ul>
+            </li>
+            <li><strong>/setwallet &lt;address&gt;</strong>
+                <ul>
+                    <li>Set your Shibarium wallet (e.g., /setwallet 0x123...abc).</li>
+                    <li>Must be a valid 42-character address starting with 0x.</li>
+                </ul>
+            </li>
+            <li><strong>/invite</strong>
+                <ul>
+                    <li>Get your invite link to share with friends.</li>
+                </ul>
+            </li>
+            <li><strong>/myinfo</strong>
+                <ul>
+                    <li>View your HAM balance, wallet, and invite stats.</li>
+                </ul>
+            </li>
+            <li><strong>/redpacket &lt;amount&gt; &lt;shares&gt;</strong> or <strong>redpacket &lt;amount&gt; &lt;shares&gt;</strong> or <strong>红包 &lt;amount&gt; &lt;shares&gt;</strong>
+                <ul>
+                    <li>Send a HAM red packet in a group (e.g., /redpacket 100 10).</li>
+                    <li>Amount must be divisible by shares. Click to grab!</li>
+                </ul>
+            </li>
+            <li><strong>/start [invite code]</strong>
+                <ul>
+                    <li>Start the bot or join via an invite code (e.g., /start ABC123).</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>3.2 HAM Earning Rules</h3>
+        <ul>
+            <li><strong>Check-In</strong>: 10 HAM every 20 hours in a group.</li>
+            <li><strong>Chatting</strong>: 1 HAM per message in a group, up to 100 per 20 hours.</li>
+            <li><strong>Invites</strong>: 1 HAM when your invitee checks in.</li>
+            <li><strong>Red Packets</strong>: Send HAM to others; they grab equal shares.</li>
+        </ul>
+
+        <h2>4. Getting Started</h2>
+        <ul>
+            <li>Send <strong>/start</strong> to begin.</li>
+            <li>Use <strong>/help</strong> to see all commands.</li>
+            <li>For WoofSwap, set a Telegram username and generate a wallet.</li>
+            <li>For Check-In, join a group to start earning HAM.</li>
+        </ul>
+
+        <h2>5. Notes</h2>
+        <ul>
+            <li>WoofSwap requires a username; Check-In works without one.</li>
+            <li>Red packets and check-ins are group-only features.</li>
+            <li>Keep your private key safe—don’t share it!</li>
+        </ul>
+    </div>
+
+    <div class="cn">
+        <h1>WoofSwap & Check-In Bot 白皮书</h1>
+        <p>欢迎使用 WoofSwap & Check-In Bot，这是一个 Telegram 机器人，结合了 Shibarium 区块链上的加密货币交易和有趣的 HAM 积分挖矿游戏。本白皮书解释了如何使用机器人及其主要功能。</p>
+
+        <h2>1. 概述</h2>
+        <p>本机器人提供两大功能：<strong>WoofSwap</strong> 用于交易代币，<strong>Check-In</strong> 用于通过社交活动赚取 HAM 积分。两者独立运行，通过 Telegram 命令轻松使用。</p>
+
+        <h2>2. WoofSwap 功能</h2>
+        <p>WoofSwap 让你在 Shibarium 上使用 BONE 交易代币。</p>
+
+        <h3>2.1 命令</h3>
+        <ul>
+            <li><strong>/buy &lt;数量&gt; BONE of &lt;代币&gt;</strong> 或 <strong>Buy &lt;数量&gt; BONE of &lt;代币&gt;</strong>
+                <ul>
+                    <li>用 BONE 购买代币（例如：/buy 10 BONE of WOOF）。</li>
+                    <li>需足够 BONE（含 0.01 BONE 手续费）。请求会排队处理。</li>
+                </ul>
+            </li>
+            <li><strong>/sell &lt;数量&gt; &lt;代币&gt;</strong> 或 <strong>Sell &lt;数量&gt; &lt;代币&gt;</strong>
+                <ul>
+                    <li>卖代币换 BONE（例如：/sell 100 WOOF）。</li>
+                    <li>需足够代币余额。请求会排队处理。</li>
+                </ul>
+            </li>
+            <li><strong>/generatewallet</strong>
+                <ul>
+                    <li>在私聊中创建 Shibarium 钱包。</li>
+                    <li>返回地址和私钥，妥善保存！</li>
+                </ul>
+            </li>
+            <li><strong>/mywallet</strong>
+                <ul>
+                    <li>在私聊中查看钱包信息。</li>
+                </ul>
+            </li>
+            <li><strong>/balance</strong>
+                <ul>
+                    <li>在私聊中查看钱包余额。</li>
+                </ul>
+            </li>
+            <li><strong>@用户名 Tip &lt;数量&gt; &lt;代币&gt;</strong>
+                <ul>
+                    <li>向其他用户转账代币或 BONE（例如：@user123 Tip 10 BONE）。</li>
+                    <li>双方需有用户名和钱包。</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>2.2 支持的代币</h3>
+        <p>使用这些代币（大写）：WOOF, DAMN, PIKA, FEED, WOW, SHIPA, LUISA, CHIKA, SHIBS, NONE, SHIB, TREAT, LEASH, DUDU, MWRX, SRS, DogeFamily, NEKO, KNINE, CANNED。</p>
+
+        <h3>2.3 规则</h3>
+        <ul>
+            <li>使用 WoofSwap 必须设置 Telegram 用户名。</li>
+            <li>交易会排队（最多 100 个队列，每个队列 50 个请求）。</li>
+            <li>队列每 5 秒处理一次。</li>
+        </ul>
+
+        <h2>3. Check-In 功能</h2>
+        <p>Check-In 让你通过每日签到和社交活动赚取 HAM 积分。</p>
+
+        <h3>3.1 命令</h3>
+        <ul>
+            <li><strong>/mint</strong> 或 <strong>mint</strong>
+                <ul>
+                    <li>在群聊中每 20 小时签到一次，赚 10 HAM。</li>
+                    <li>邀请人每次签到时获 1 HAM。</li>
+                </ul>
+            </li>
+            <li><strong>/setwallet &lt;地址&gt;</strong>
+                <ul>
+                    <li>设置 Shibarium 钱包（例如：/setwallet 0x123...abc）。</li>
+                    <li>必须是 42 位以 0x 开头的地址。</li>
+                </ul>
+            </li>
+            <li><strong>/invite</strong>
+                <ul>
+                    <li>获取邀请链接，分享给朋友。</li>
+                </ul>
+            </li>
+            <li><strong>/myinfo</strong>
+                <ul>
+                    <li>查看 HAM 余额、钱包和邀请统计。</li>
+                </ul>
+            </li>
+            <li><strong>/redpacket &lt;数量&gt; &lt;份数&gt;</strong> 或 <strong>redpacket &lt;数量&gt; &lt;份数&gt;</strong> 或 <strong>红包 &lt;数量&gt; &lt;份数&gt;</strong>
+                <ul>
+                    <li>在群聊中发送 HAM 红包（例如：/redpacket 100 10）。</li>
+                    <li>数量必须能被份数整除。点击抢红包！</li>
+                </ul>
+            </li>
+            <li><strong>/start [邀请码]</strong>
+                <ul>
+                    <li>启动机器人或通过邀请码加入（例如：/start ABC123）。</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>3.2 HAM 赚取规则</h3>
+        <ul>
+            <li><strong>签到</strong>：群聊中每 20 小时 10 HAM。</li>
+            <li><strong>聊天</strong>：群聊中每次发言 1 HAM，每 20 小时最多 100 次。</li>
+            <li><strong>邀请</strong>：被邀请者签到时获 1 HAM。</li>
+            <li><strong>红包</strong>：发送 HAM 给他人，领取者平分。</li>
+        </ul>
+
+        <h2>4. 开始使用</h2>
+        <ul>
+            <li>发送 <strong>/start</strong> 开始。</li>
+            <li>使用 <strong>/help</strong> 查看所有命令。</li>
+            <li>WoofSwap：设置用户名并生成钱包。</li>
+            <li>Check-In：加入群聊开始赚 HAM。</li>
+        </ul>
+
+        <h2>5. 注意事项</h2>
+        <ul>
+            <li>WoofSwap 需要用户名；Check-In 无需用户名。</li>
+            <li>红包和签到仅限群聊使用。</li>
+            <li>妥善保管私钥，不要分享！</li>
+        </ul>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.querySelectorAll('.en, .cn').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.${lang}`).classList.add('active');
+        }
+    </script>
+</body>
+</html>
